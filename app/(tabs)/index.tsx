@@ -84,7 +84,10 @@ export default function App() {
                 />
               </View>
 
-              <ListHeading title="All Subscriptions" />
+              <ListHeading
+                title="All Subscriptions"
+                viewLink="/(tabs)/subscriptions"
+              />
             </>
           )}
           data={HOME_SUBSCRIPTIONS}
@@ -102,7 +105,7 @@ export default function App() {
                   posthog.capture("subscription_card_expanded", {
                     subscription_id: item.id,
                     subscription_name: item.name,
-                    subscription_category: item.category,
+                    subscription_category: item.category as string,
                     billing_cycle: item.billing,
                   });
                 }
