@@ -1,8 +1,9 @@
 import { tabs } from "@/constants/data";
 import { colors, components } from "@/constants/theme";
+import { useAuth } from "@clerk/expo";
 // eslint-disable-next-line import/no-named-as-default
 import clsx from "clsx";
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import { Image, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -17,7 +18,18 @@ const TabIcon = ({ focused, icon }: TabIconProps) => (
 );
 
 const TabLayout = () => {
+  const { isSignedIn, isLoaded } = useAuth();
   const insets = useSafeAreaInsets();
+
+  // Wait for auth to load before rendering anything
+  if (!isLoaded) {
+    return null;
+  }
+
+  // Redirect to home if user is already signed in
+  if (!isSignedIn) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
 
   return (
     <Tabs
