@@ -2,8 +2,10 @@ import "@/global.css";
 import { ClerkProvider, useAuth } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack } from "expo-router";
-import { useEffect } from "react";
+import { SplashScreen, Stack, usePathname, useGlobalSearchParams } from "expo-router";
+import { useEffect, useRef } from "react";
+import { PostHogProvider } from "posthog-react-native";
+import { posthog } from "../src/config/posthog";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -15,6 +17,9 @@ if (!publishableKey) {
 
 function RootLayoutContent() {
   const { isLoaded: authLoaded } = useAuth();
+  const pathname = usePathname();
+  const params = useGlobalSearchParams();
+  const previousPathname = useRef<string | undefined>(undefined);
 
   const [fontsLoaded] = useFonts({
     "sans-regular": require("../assets/fonts/PlusJakartaSans-Regular.ttf"),
@@ -32,6 +37,17 @@ function RootLayoutContent() {
     }
   }, [fontsLoaded, authLoaded]);
 
+  // Manual screen tracking for Expo Router
+  useEffect(() => {
+    if (previousPathname.current !== pathname) {
+      posthog.screen(pathname, {
+        previous_screen: previousPathname.current ?? null,
+        ...params,
+      });
+      previousPathname.current = pathname;
+    }
+  }, [pathname, params]);
+
   // Don't render app until both are ready
   if (!fontsLoaded || !authLoaded) return null;
 
@@ -41,7 +57,17 @@ function RootLayoutContent() {
 export default function RootLayout() {
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <RootLayoutContent />
+      <PostHogProvider
+        client={posthog}
+        autocapture={{
+          captureScreens: false,
+          captureTouches: true,
+          propsToCapture: ["testID"],
+          maxElementsCaptured: 20,
+        }}
+      >
+        <RootLayoutContent />
+      </PostHogProvider>
     </ClerkProvider>
   );
 }
