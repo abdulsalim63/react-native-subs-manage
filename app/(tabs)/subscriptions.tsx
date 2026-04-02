@@ -1,16 +1,72 @@
+import SubscriptionCard from "@/components/SubscriptionCard";
+import { useSubscriptionStore } from "@/lib/subscriptionStore";
+import { Ionicons } from "@expo/vector-icons";
 import { styled } from "nativewind";
-import React from "react";
-import { Text } from "react-native";
+import { useState } from "react";
+import { FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
-const subscriptions = () => {
+const Subscriptions = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { subscriptions } = useSubscriptionStore();
+
+  const filteredSubscriptions = subscriptions.filter(
+    (subscription) =>
+      subscription.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      subscription.category
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      subscription.plan?.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
   return (
-    <SafeAreaView className="flex-1 bg-background p-5">
-      <Text>subscriptions</Text>
+    <SafeAreaView className="flex-1 bg-background">
+      <FlatList
+        data={filteredSubscriptions}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          <View className="pt-5">
+            <Text className="text-3xl font-bold text-dark px-1 mb-5">
+              Subscriptions
+            </Text>
+            <View className="flex-1 flex-row items-center bg-white rounded-full px-4 mb-4">
+              <TextInput
+                className="flex-1 py-3 text-dark"
+                placeholder="Search subscriptions..."
+                placeholderTextColor="#666"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery && (
+                <Pressable onPress={() => setSearchQuery("")}>
+                  <Ionicons name="close-outline" size={14} color="#666" />
+                </Pressable>
+              )}
+            </View>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <SubscriptionCard
+            {...item}
+            expanded={expandedId === item.id}
+            onPress={() =>
+              setExpandedId(expandedId === item.id ? null : item.id)
+            }
+          />
+        )}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingBottom: 20,
+          gap: 12,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      />
     </SafeAreaView>
   );
 };
-
-export default subscriptions;
+export default Subscriptions;
